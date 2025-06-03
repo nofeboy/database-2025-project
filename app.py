@@ -645,63 +645,213 @@ HTML_TEMPLATE = '''
         }
         
         /* ---------- modal 기본 레이아웃 ---------- */
-        .modal-overlay{
-            position:fixed;      /* 화면 전체 덮기 */
-            inset:0;             /* = top/right/bottom/left:0 */
-            display:none;        /* 기본은 숨김 */
-            align-items:center;  /* 가운데 정렬 */
-            justify-content:center;
-            background:rgba(0,0,0,.45);   /* 반투명 배경 */
-            z-index:1000;        /* 어떤 컴포넌트보다 위로 */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            backdrop-filter: blur(2px);
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
         }
         
-        .modal-overlay.show{     /* JS가 add('show') 하면 등장 */
-            display:flex;
+        .modal-overlay.show {
+            opacity: 1;
+            visibility: visible;
         }
         
-        .modal-container{
-            width:600px;         /* 기본 폭 */
-            max-height:90vh;     /* 세로 넘치면 스크롤 */
-            overflow-y:auto;
-            background:#fff;
-            border-radius:8px;
-            box-shadow:0 8px 24px rgba(0,0,0,.25);
-            position:relative;
+        .modal-container {
+            width: 600px;
+            max-height: 80vh;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
         }
+        
+        .modal-overlay.show .modal-container {
+            transform: scale(1);
+        }        
         
         /* 헤더 · 닫기버튼 등 디테일 */
-        .modal-header{
-            display:flex;
-            align-items:center;
-            justify-content:space-between;
-            padding:16px 24px;
-            border-bottom:1px solid #e0e0e0;
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 24px;
+            border-bottom: 1px solid #f0f0f0;
+            background-color: #fafafa;
+            border-radius: 12px 12px 0 0;
         }
         
-        .modal-close{
-            background:none;
-            border:none;
-            font-size:24px;
-            cursor:pointer;
-            line-height:1;
+        .modal-header h3 {
+            font-size: 18px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin: 0;
+        }        
+        
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            line-height: 1;
+            color: #666;
+            transition: color 0.2s;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
         }
         
-        .modal-body{ padding:24px; }
+        .modal-close:hover {
+            background-color: #f0f0f0;
+            color: #333;
+        }
+        
+        .modal-body {
+            padding: 0;
+            overflow-y: auto;
+            flex: 1;
+        }
+        
+        /* 검색바 스타일 */
+        .modal-search-bar {
+            padding: 16px 24px;
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .modal-search-bar label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: #495057;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        
+        .modal-search-bar input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+        
+        .modal-btn-confirm {
+            margin-left: auto;
+            padding: 8px 20px;
+            background-color: #4A90E2;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .modal-btn-confirm:hover {
+            background-color: #357ABD;
+        }
+        
+        /* 컨텐츠 영역 */
+        .modal-content {
+            padding: 20px 24px;
+        }
+        
+        /* 대륙별 제목 */
+        .modal-subtitle {
+            font-size: 15px;
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 12px;
+            padding: 8px 0;
+            border-bottom: 2px solid #e9ecef;
+        }
+        
+        .modal-subtitle:not(:first-child) {
+            margin-top: 24px;
+        }
+        
         
         /* 체크박스 그리드(2열‧3열) */
-        .modal-checkbox-grid{
-            display:grid;
-            grid-template-columns:repeat(2,1fr);
-            gap:12px;
+        .modal-checkbox-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0;
         }
-        .country-modal-grid{
-            display:grid;
-            grid-template-columns:repeat(3,1fr);
-            gap:12px;
+        .country-modal-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0;
+            margin-bottom: 20px;
         }
-        .modal-checkbox-item{
-            padding:8px 0;
-            border-bottom:1px solid #f0f0f0;
+        
+        .modal-checkbox-item {
+            padding: 12px 16px;
+            border-bottom: 1px solid #f0f0f0;
+            border-right: 1px solid #f0f0f0;
+            transition: background-color 0.2s;
+        }
+        
+        .modal-checkbox-item:hover {
+            background-color: #f8f9fa;
+        }
+        
+        /* 마지막 행의 border-bottom 제거 */
+        .modal-checkbox-grid .modal-checkbox-item:nth-last-child(-n+2) {
+            border-bottom: none;
+        }
+        
+        .country-modal-grid .modal-checkbox-item:nth-last-child(-n+3) {
+            border-bottom: none;
+        }
+        
+        /* 우측 border 제거 */
+        .modal-checkbox-grid .modal-checkbox-item:nth-child(2n) {
+            border-right: none;
+        }
+        
+        .country-modal-grid .modal-checkbox-item:nth-child(3n) {
+            border-right: none;
+        }
+        
+        .modal-checkbox-item label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            color: #495057;
+            margin: 0;
+        }
+        
+        .modal-checkbox-item input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        
+        /* 체크박스 스타일 개선 */
+        input[type="checkbox"] {
+            accent-color: #4A90E2;
         }
 
         @media (max-width: 768px) {

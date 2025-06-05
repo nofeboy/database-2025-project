@@ -12,7 +12,7 @@ import os
 import sys
 
 class KobisDBLoader:
-    def __init__(self, host='localhost', user='root', password='!@jinsw1006!@', database='kobis_db'):
+    def __init__(self, host='localhost', user='root', password='!tpgus1260!', database='kobis_db'):
         """데이터베이스 연결 초기화"""
         self.connection = None
         try:

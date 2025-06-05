@@ -15,7 +15,7 @@ app = Flask(__name__)
 DB_CONFIG = {
     'host': 'localhost',
     'user': 'root',
-    'password': '!@jinsw1006!@',  # MySQL 비밀번호
+    'password': 'tpgus1260!',  # MySQL 비밀번호
     'database': 'kobis_db',
     'charset': 'utf8mb4',
     'collation': 'utf8mb4_unicode_ci'

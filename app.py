@@ -900,15 +900,6 @@ HTML_TEMPLATE = '''
                         </select>
                     </div>
                 </div>
-                
-                <div class="form-group">
-                    <label>• 개봉일자</label>
-                    <div class="date-group">
-                        <input type="date" id="dateFrom">
-                        <span>~</span>
-                        <input type="date" id="dateTo">
-                    </div>
-                </div>
             </div>
             
             <!-- 더보기 버튼 -->
@@ -1060,26 +1051,6 @@ HTML_TEMPLATE = '''
             genre: [],
             country: []
         };
-        
-        // 페이지 로드 시 초기화
-        window.onload = function() {
-            initYearSelects();
-            loadStats();
-            loadFilterOptions();
-        };
-        
-        // 연도 선택 옵션 초기화
-        function initYearSelects() {
-            const yearFrom = document.getElementById('yearFrom');
-            const yearTo = document.getElementById('yearTo');
-            
-            for (let year = 2025; year >= 1925; year--) {
-                const option1 = new Option(year, year);
-                const option2 = new Option(year, year);
-                yearFrom.add(option1);
-                yearTo.add(option2);
-            }
-        }
         
         // 필터 옵션 로드
         function loadFilterOptions() {
@@ -1281,8 +1252,6 @@ HTML_TEMPLATE = '''
                 directorName: document.getElementById('directorName').value,
                 yearFrom: document.getElementById('yearFrom').value,
                 yearTo: document.getElementById('yearTo').value,
-                dateFrom: document.getElementById('dateFrom').value,
-                dateTo: document.getElementById('dateTo').value,
                 productionStatus: selectedValues.productionStatus,
                 movieType: selectedValues.movieType,
                 genre: selectedValues.genre,
@@ -1422,8 +1391,6 @@ HTML_TEMPLATE = '''
             document.getElementById('directorName').value = '';
             document.getElementById('yearFrom').value = '--전체--';
             document.getElementById('yearTo').value = '--전체--';
-            document.getElementById('dateFrom').value = '';
-            document.getElementById('dateTo').value = '';
             
             // 선택값 초기화
             selectedValues = {

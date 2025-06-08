@@ -180,7 +180,8 @@ class KobisDBLoader:
             mi.title_ko,
             mi.title_en,
             CASE 
-                WHEN mi.production_year REGEXP '^[0-9]{4}$' THEN CAST(mi.production_year AS UNSIGNED)
+                WHEN mi.production_year REGEXP '^[0-9]{4}(\\.0)?$' THEN CAST(FLOOR(CAST(mi.production_year AS DECIMAL(10,1))) AS UNSIGNED)
+                WHEN mi.production_year REGEXP '^[0-9]{4}' THEN CAST(SUBSTRING(mi.production_year, 1, 4) AS UNSIGNED)
                 ELSE NULL
             END,
             mi.type,

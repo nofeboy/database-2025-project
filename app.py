@@ -13,7 +13,7 @@ app = Flask(__name__)
 
 # 데이터베이스 설정
 DB_CONFIG = {
-    'host': 'localhost',
+    'host': '127.0.0.1',
     'user': 'root',
     'password': 'tpgus1260!',  # MySQL 비밀번호
     'database': 'kobis_db',
@@ -1524,9 +1524,10 @@ if __name__ == '__main__':
     print("=" * 50)
     print("🎬 영화 검색 시스템 시작!")
     print("=" * 50)
-    print("웹 브라우저에서 http://localhost:5000 으로 접속하세요.")
+    #print("웹 브라우저에서 http://localhost:5000 으로 접속하세요.")
+    print("웹 브라우저에서 http://127.0.0.1:5000 으로 접속하세요.")
     print("종료하려면 Ctrl+C를 누르세요.")
     print("=" * 50)
 
     # Flask 앱 실행
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True, host='127.0.0.1', port=5000)

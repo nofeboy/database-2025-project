@@ -12,7 +12,7 @@ import os
 import sys
 
 class KobisDBLoader:
-    def __init__(self, host='localhost', user='root', password='!tpgus1260!', database='kobis_db'):
+    def __init__(self, host='127.0.0.1', user='root', password='tpgus1260!', database='kobis_db'):
         """데이터베이스 연결 초기화"""
         self.connection = None
         try:
@@ -298,7 +298,7 @@ def main():
 
     try:
         # 로더 초기화
-        loader = KobisDBLoader(password='!@jinsw1006!@')  # MySQL 비밀번호 수정
+        loader = KobisDBLoader(password='tpgus1260!')  # MySQL 비밀번호 수정
 
         # 엑셀 데이터 로드
         df = loader.load_excel_data(excel_file)

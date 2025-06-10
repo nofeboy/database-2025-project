@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-KOBIS 영화 검색 시스템 - Flask 웹 애플리케이션 (업그레이드 버전)
+KOBIS 영화 검색 시스템 - Flask 웹 애플리케이션 (정렬 기능 포함)
 """
 
 from flask import Flask, render_template_string, request, jsonify
@@ -220,8 +220,40 @@ def search_movies(params):
     # GROUP BY 추가
     query += " GROUP BY m.movie_id"
 
-    # 정렬
-    query += " ORDER BY m.production_year DESC, m.title_ko"
+    # 정렬 처리
+    sort_order = params.get('sortOrder', 'year_desc')
+    if sort_order == 'year_desc':
+        query += " ORDER BY m.production_year DESC, m.title_ko"
+    elif sort_order == 'year_asc':
+        query += " ORDER BY m.production_year ASC, m.title_ko"
+    elif sort_order == 'title_asc':
+        # 영화명순 (ㄱ-Z): 특수문자 → 숫자 → 한글 → 영문 순
+        query += """ ORDER BY 
+            CASE 
+                WHEN ASCII(LEFT(m.title_ko, 1)) < 48 THEN 1                           -- 특수문자 (0-47)
+                WHEN ASCII(LEFT(m.title_ko, 1)) BETWEEN 48 AND 57 THEN 2             -- 숫자 (48-57)
+                WHEN LEFT(m.title_ko, 1) >= '가' AND LEFT(m.title_ko, 1) <= '힣' THEN 3  -- 한글
+                WHEN ASCII(LEFT(m.title_ko, 1)) BETWEEN 65 AND 90 THEN 4             -- 영문 대문자 (65-90)
+                WHEN ASCII(LEFT(m.title_ko, 1)) BETWEEN 97 AND 122 THEN 4            -- 영문 소문자 (97-122)
+                ELSE 5                                                                 -- 기타
+            END,
+            m.title_ko ASC
+        """
+    elif sort_order == 'title_desc':
+        # 영화명순 (Z-ㄱ): 영문 → 한글 → 숫자 → 특수문자 순
+        query += """ ORDER BY 
+            CASE 
+                WHEN ASCII(LEFT(m.title_ko, 1)) BETWEEN 65 AND 90 THEN 1             -- 영문 대문자
+                WHEN ASCII(LEFT(m.title_ko, 1)) BETWEEN 97 AND 122 THEN 1            -- 영문 소문자
+                WHEN LEFT(m.title_ko, 1) >= '가' AND LEFT(m.title_ko, 1) <= '힣' THEN 2  -- 한글
+                WHEN ASCII(LEFT(m.title_ko, 1)) BETWEEN 48 AND 57 THEN 3             -- 숫자
+                WHEN ASCII(LEFT(m.title_ko, 1)) < 48 THEN 4                           -- 특수문자
+                ELSE 5                                                                 -- 기타
+            END,
+            m.title_ko DESC
+        """
+    else:
+        query += " ORDER BY m.production_year DESC, m.title_ko"
 
     # 페이지네이션
     page = int(params.get('page', 1))
@@ -538,6 +570,34 @@ HTML_TEMPLATE = '''
             border-bottom: 1px solid #dee2e6;
             font-size: 14px;
             color: #666;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .sort-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .sort-container label {
+            font-weight: 500;
+            color: #495057;
+        }
+        
+        .sort-select {
+            padding: 6px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            background: white;
+            cursor: pointer;
+        }
+        
+        .sort-select:focus {
+            outline: none;
+            border-color: #4A90E2;
         }
         
         table {
@@ -1023,6 +1083,7 @@ HTML_TEMPLATE = '''
     
     <script>
         let currentTitleIndex = '';
+        let currentSortOrder = 'year_desc';  // 기본 정렬: 제작년도 내림차순
         
         // 페이지 로드 시 초기화
         window.onload = function() {
@@ -1245,6 +1306,12 @@ HTML_TEMPLATE = '''
                 });
         }
         
+        // 정렬 변경
+        function changeSortOrder() {
+            currentSortOrder = document.getElementById('sortOrder').value;
+            searchMovies(1);  // 정렬 변경 시 첫 페이지로
+        }
+        
         // 영화 검색
         function searchMovies(page = 1) {
             const params = {
@@ -1257,6 +1324,7 @@ HTML_TEMPLATE = '''
                 genre: selectedValues.genre,
                 country: selectedValues.country,
                 titleIndex: currentTitleIndex,
+                sortOrder: currentSortOrder,
                 page: page
             };
             
@@ -1292,8 +1360,19 @@ HTML_TEMPLATE = '''
             let html = `
                 <div class="results">
                     <div class="results-header">
-                        총 ${data.total.toLocaleString()}개의 영화가 검색되었습니다. 
-                        (${data.page}/${data.total_pages} 페이지)
+                        <div>
+                            총 ${data.total.toLocaleString()}개의 영화가 검색되었습니다. 
+                            (${data.page}/${data.total_pages} 페이지)
+                        </div>
+                        <div class="sort-container">
+                            <label>정렬:</label>
+                            <select class="sort-select" id="sortOrder" onchange="changeSortOrder()">
+                                <option value="year_desc" ${currentSortOrder === 'year_desc' ? 'selected' : ''}>제작년도 ↓</option>
+                                <option value="year_asc" ${currentSortOrder === 'year_asc' ? 'selected' : ''}>제작년도 ↑</option>
+                                <option value="title_asc" ${currentSortOrder === 'title_asc' ? 'selected' : ''}>영화명순 (ㄱ-Z)</option>
+                                <option value="title_desc" ${currentSortOrder === 'title_desc' ? 'selected' : ''}>영화명순 (Z-ㄱ)</option>
+                            </select>
+                        </div>
                     </div>
                     <table>
                         <thead>
@@ -1411,6 +1490,7 @@ HTML_TEMPLATE = '''
             document.getElementById('country').placeholder = '전체';
             
             currentTitleIndex = '';
+            currentSortOrder = 'year_desc';  // 정렬 초기화
             document.querySelectorAll('.index-btn').forEach(btn => {
                 btn.classList.remove('active');
             });

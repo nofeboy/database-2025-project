@@ -962,14 +962,12 @@ HTML_TEMPLATE = '''
                 </div>
             </div>
             
-            <!-- 더보기 버튼 -->
             <div class="more-options-toggle">
                 <button class="more-options-btn" onclick="toggleMoreOptions()">
                     더보기 <span class="arrow" id="arrow">▼</span>
                 </button>
             </div>
             
-            <!-- 추가 검색 옵션 -->
             <div class="more-options" id="moreOptions">
                 <div class="form-grid">
                     <div class="form-group">
@@ -1061,7 +1059,6 @@ HTML_TEMPLATE = '''
         <div id="resultsContainer"></div>
     </div>
     
-    <!-- 모달 창 -->
     <div id="modalOverlay" class="modal-overlay" onclick="closeModalOverlay(event)">
         <div class="modal-container">
             <div class="modal-header">
@@ -1075,8 +1072,7 @@ HTML_TEMPLATE = '''
                     <button class="modal-btn-confirm" onclick="confirmSelection()">확인</button>
                 </div>
                 <div class="modal-content" id="modalContent">
-                    <!-- 동적으로 생성됨 -->
-                </div>
+                    </div>
             </div>
         </div>
     </div>

@@ -48,7 +48,6 @@ CREATE TABLE movies (
                         INDEX idx_title_en (title_en),
                         INDEX idx_production_year (production_year),
                         INDEX idx_release_date (release_date),
-                        FULLTEXT idx_title_search (title_ko, title_en),
 
                         FOREIGN KEY (director_id) REFERENCES directors(director_id) ON DELETE SET NULL,
                         FOREIGN KEY (company_id) REFERENCES production_companies(company_id) ON DELETE SET NULL

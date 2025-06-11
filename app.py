@@ -87,23 +87,6 @@ def get_filter_options():
 
     return options
 
-def get_chosung(text):
-    """한글 초성 추출 함수"""
-    CHOSUNG_LIST = ['ㄱ', 'ㄲ', 'ㄴ', 'ㄷ', 'ㄸ', 'ㄹ', 'ㅁ', 'ㅂ', 'ㅃ', 'ㅅ', 'ㅆ', 'ㅇ', 'ㅈ', 'ㅉ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ']
-
-    if not text:
-        return ""
-
-    first_char = text[0]
-
-    # 한글인지 확인
-    if '가' <= first_char <= '힣':
-        char_code = ord(first_char) - ord('가')
-        chosung_index = char_code // 588  # 588 = 21(중성) * 28(종성)
-        return CHOSUNG_LIST[chosung_index]
-
-    return first_char
-
 def search_movies(params):
     """영화 검색 쿼리 실행"""
     connection = get_db_connection()
@@ -191,20 +174,11 @@ def search_movies(params):
         if params['titleIndex'] in ['ㄱ', 'ㄴ', 'ㄷ', 'ㄹ', 'ㅁ', 'ㅂ', 'ㅅ', 'ㅇ', 'ㅈ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ']:
             # 해당 초성으로 시작하는 모든 한글 범위
             chosung_ranges = {
-                'ㄱ': ('가', '깋'),
-                'ㄴ': ('나', '닣'),
-                'ㄷ': ('다', '딯'),
-                'ㄹ': ('라', '맇'),
-                'ㅁ': ('마', '밓'),
-                'ㅂ': ('바', '빟'),
-                'ㅅ': ('사', '싷'),
-                'ㅇ': ('아', '잏'),
-                'ㅈ': ('자', '짛'),
-                'ㅊ': ('차', '칳'),
-                'ㅋ': ('카', '킿'),
-                'ㅌ': ('타', '팋'),
-                'ㅍ': ('파', '핗'),
-                'ㅎ': ('하', '힣')
+                'ㄱ': ('가', '깋'), 'ㄴ': ('나', '닣'), 'ㄷ': ('다', '딯'),
+                'ㄹ': ('라', '맇'), 'ㅁ': ('마', '밓'), 'ㅂ': ('바', '빟'),
+                'ㅅ': ('사', '싷'), 'ㅇ': ('아', '잏'), 'ㅈ': ('자', '짛'),
+                'ㅊ': ('차', '칳'), 'ㅋ': ('카', '킿'), 'ㅌ': ('타', '팋'),
+                'ㅍ': ('파', '핗'), 'ㅎ': ('하', '힣')
             }
 
             if params['titleIndex'] in chosung_ranges:
@@ -227,28 +201,26 @@ def search_movies(params):
     elif sort_order == 'year_asc':
         query += " ORDER BY m.production_year ASC, m.title_ko"
     elif sort_order == 'title_asc':
-        # 영화명순 (ㄱ-Z): 특수문자 → 숫자 → 한글 → 영문 순
-        query += """ ORDER BY 
-            CASE 
-                WHEN ASCII(LEFT(m.title_ko, 1)) < 48 THEN 1                           -- 특수문자 (0-47)
-                WHEN ASCII(LEFT(m.title_ko, 1)) BETWEEN 48 AND 57 THEN 2             -- 숫자 (48-57)
-                WHEN LEFT(m.title_ko, 1) >= '가' AND LEFT(m.title_ko, 1) <= '힣' THEN 3  -- 한글
-                WHEN ASCII(LEFT(m.title_ko, 1)) BETWEEN 65 AND 90 THEN 4             -- 영문 대문자 (65-90)
-                WHEN ASCII(LEFT(m.title_ko, 1)) BETWEEN 97 AND 122 THEN 4            -- 영문 소문자 (97-122)
-                ELSE 5                                                                 -- 기타
+        query += """ ORDER BY
+            CASE
+                WHEN ASCII(LEFT(m.title_ko, 1)) < 48 THEN 1
+                WHEN ASCII(LEFT(m.title_ko, 1)) BETWEEN 48 AND 57 THEN 2
+                WHEN LEFT(m.title_ko, 1) >= '가' AND LEFT(m.title_ko, 1) <= '힣' THEN 3
+                WHEN ASCII(LEFT(m.title_ko, 1)) BETWEEN 65 AND 90 THEN 4
+                WHEN ASCII(LEFT(m.title_ko, 1)) BETWEEN 97 AND 122 THEN 4
+                ELSE 5
             END,
             m.title_ko ASC
         """
     elif sort_order == 'title_desc':
-        # 영화명순 (Z-ㄱ): 영문 → 한글 → 숫자 → 특수문자 순
-        query += """ ORDER BY 
-            CASE 
-                WHEN ASCII(LEFT(m.title_ko, 1)) BETWEEN 65 AND 90 THEN 1             -- 영문 대문자
-                WHEN ASCII(LEFT(m.title_ko, 1)) BETWEEN 97 AND 122 THEN 1            -- 영문 소문자
-                WHEN LEFT(m.title_ko, 1) >= '가' AND LEFT(m.title_ko, 1) <= '힣' THEN 2  -- 한글
-                WHEN ASCII(LEFT(m.title_ko, 1)) BETWEEN 48 AND 57 THEN 3             -- 숫자
-                WHEN ASCII(LEFT(m.title_ko, 1)) < 48 THEN 4                           -- 특수문자
-                ELSE 5                                                                 -- 기타
+        query += """ ORDER BY
+            CASE
+                WHEN ASCII(LEFT(m.title_ko, 1)) BETWEEN 65 AND 90 THEN 1
+                WHEN ASCII(LEFT(m.title_ko, 1)) BETWEEN 97 AND 122 THEN 1
+                WHEN LEFT(m.title_ko, 1) >= '가' AND LEFT(m.title_ko, 1) <= '힣' THEN 2
+                WHEN ASCII(LEFT(m.title_ko, 1)) BETWEEN 48 AND 57 THEN 3
+                WHEN ASCII(LEFT(m.title_ko, 1)) < 48 THEN 4
+                ELSE 5
             END,
             m.title_ko DESC
         """
@@ -265,7 +237,7 @@ def search_movies(params):
         cursor.execute(query, query_params)
         results = cursor.fetchall()
 
-        # 전체 개수 구하기 (수정된 쿼리)
+        # 전체 개수 구하기
         count_query = """
             SELECT COUNT(DISTINCT m.movie_id) as total
             FROM movies m
@@ -279,74 +251,53 @@ def search_movies(params):
 
         # 동일한 조건 적용
         count_params = []
-
         if params.get('movieTitle'):
             count_query += " AND (m.title_ko LIKE %s OR m.title_en LIKE %s)"
             search_term = f"%{params['movieTitle']}%"
             count_params.extend([search_term, search_term])
-
         if params.get('directorName'):
             count_query += " AND d.name LIKE %s"
             count_params.append(f"%{params['directorName']}%")
-
         if params.get('yearFrom') and params['yearFrom'] != '--전체--':
             count_query += " AND m.production_year >= %s"
             count_params.append(int(params['yearFrom']))
-
         if params.get('yearTo') and params['yearTo'] != '--전체--':
             count_query += " AND m.production_year <= %s"
             count_params.append(int(params['yearTo']))
-
         if params.get('productionStatus') and len(params.get('productionStatus', [])) > 0:
             placeholders = ', '.join(['%s'] * len(params['productionStatus']))
             count_query += f" AND m.production_status IN ({placeholders})"
             count_params.extend(params['productionStatus'])
-
         if params.get('movieType') and len(params.get('movieType', [])) > 0:
             placeholders = ', '.join(['%s'] * len(params['movieType']))
             count_query += f" AND m.type IN ({placeholders})"
             count_params.extend(params['movieType'])
-
         if params.get('genre') and len(params.get('genre', [])) > 0:
             genre_conditions = []
             for _ in params['genre']:
                 genre_conditions.append("EXISTS (SELECT 1 FROM movie_genres mg2 JOIN genres g2 ON mg2.genre_id = g2.genre_id WHERE mg2.movie_id = m.movie_id AND g2.name = %s)")
             count_query += f" AND ({' OR '.join(genre_conditions)})"
             count_params.extend(params['genre'])
-
         if params.get('country') and len(params.get('country', [])) > 0:
             country_conditions = []
             for _ in params['country']:
                 country_conditions.append("EXISTS (SELECT 1 FROM movie_countries mc2 JOIN countries c2 ON mc2.country_id = c2.country_id WHERE mc2.movie_id = m.movie_id AND c2.name = %s)")
             count_query += f" AND ({' OR '.join(country_conditions)})"
             count_params.extend(params['country'])
-
         if params.get('titleIndex'):
-            # 한글 자음인 경우
             if params['titleIndex'] in ['ㄱ', 'ㄴ', 'ㄷ', 'ㄹ', 'ㅁ', 'ㅂ', 'ㅅ', 'ㅇ', 'ㅈ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ']:
                 chosung_ranges = {
-                    'ㄱ': ('가', '깋'),
-                    'ㄴ': ('나', '닣'),
-                    'ㄷ': ('다', '딯'),
-                    'ㄹ': ('라', '맇'),
-                    'ㅁ': ('마', '밓'),
-                    'ㅂ': ('바', '빟'),
-                    'ㅅ': ('사', '싷'),
-                    'ㅇ': ('아', '잏'),
-                    'ㅈ': ('자', '짛'),
-                    'ㅊ': ('차', '칳'),
-                    'ㅋ': ('카', '킿'),
-                    'ㅌ': ('타', '팋'),
-                    'ㅍ': ('파', '핗'),
-                    'ㅎ': ('하', '힣')
+                    'ㄱ': ('가', '깋'), 'ㄴ': ('나', '닣'), 'ㄷ': ('다', '딯'),
+                    'ㄹ': ('라', '맇'), 'ㅁ': ('마', '밓'), 'ㅂ': ('바', '빟'),
+                    'ㅅ': ('사', '싷'), 'ㅇ': ('아', '잏'), 'ㅈ': ('자', '짛'),
+                    'ㅊ': ('차', '칳'), 'ㅋ': ('카', '킿'), 'ㅌ': ('타', '팋'),
+                    'ㅍ': ('파', '핗'), 'ㅎ': ('하', '힣')
                 }
-
                 if params['titleIndex'] in chosung_ranges:
                     start_char, end_char = chosung_ranges[params['titleIndex']]
                     count_query += " AND m.title_ko >= %s AND m.title_ko < %s"
                     count_params.extend([start_char, chr(ord(end_char) + 1)])
             else:
-                # 알파벳인 경우
                 count_query += " AND (m.title_ko LIKE %s OR m.title_en LIKE %s)"
                 index_term = f"{params['titleIndex']}%"
                 count_params.extend([index_term, index_term])
@@ -369,7 +320,7 @@ def search_movies(params):
         cursor.close()
         connection.close()
 
-# HTML 템플릿
+# HTML 템플릿 (변경 없음)
 HTML_TEMPLATE = '''
 <!DOCTYPE html>
 <html lang="ko">
@@ -378,687 +329,141 @@ HTML_TEMPLATE = '''
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>영화 검색 시스템</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background-color: #f5f5f5;
-            color: #333;
-        }
-        
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        
-        h1 {
-            margin-bottom: 30px;
-            color: #2c3e50;
-        }
-        
-        .search-form {
-            background: white;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 25px;
-            margin-bottom: 30px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        
-        .form-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-        
-        .form-group {
-            display: flex;
-            align-items: center;
-        }
-        
-        .form-group label {
-            width: 100px;
-            font-weight: 500;
-            color: #555;
-        }
-        
-        .form-group input,
-        .form-group select {
-            flex: 1;
-            padding: 8px 12px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 14px;
-        }
-        
-        .form-group input:focus,
-        .form-group select:focus {
-            outline: none;
-            border-color: #4A90E2;
-        }
-        
-        .year-group, .date-group {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .year-group select {
-            flex: 1;
-        }
-        
-        .more-options-toggle {
-            text-align: center;
-            margin: 20px 0;
-        }
-        
-        .more-options-btn {
-            background: none;
-            border: none;
-            color: #4A90E2;
-            cursor: pointer;
-            font-size: 14px;
-            padding: 5px 15px;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-        }
-        
-        .more-options-btn:hover {
-            text-decoration: underline;
-        }
-        
-        .arrow {
-            font-size: 12px;
-            transition: transform 0.3s;
-        }
-        
-        .arrow.up {
-            transform: rotate(180deg);
-        }
-        
-        .more-options {
-            display: none;
-            border-top: 1px solid #e0e0e0;
-            padding-top: 20px;
-            margin-top: 20px;
-        }
-        
-        .more-options.show {
-            display: block;
-        }
-        
-        .index-buttons {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 5px;
-            margin-top: 10px;
-        }
-        
-        .index-btn {
-            padding: 5px 10px;
-            border: 1px solid #ddd;
-            background: white;
-            cursor: pointer;
-            font-size: 14px;
-            border-radius: 3px;
-            transition: all 0.3s;
-        }
-        
-        .index-btn:hover {
-            background-color: #f0f0f0;
-            border-color: #4A90E2;
-        }
-        
-        .index-btn.active {
-            background-color: #4A90E2;
-            color: white;
-            border-color: #4A90E2;
-        }
-        
-        .button-group {
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-            margin-top: 20px;
-        }
-        
-        .btn {
-            padding: 10px 24px;
-            border: none;
-            border-radius: 4px;
-            font-size: 14px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        
-        .btn-primary {
-            background-color: #4A90E2;
-            color: white;
-        }
-        
-        .btn-primary:hover {
-            background-color: #357ABD;
-        }
-        
-        .btn-secondary {
-            background-color: #6c757d;
-            color: white;
-        }
-        
-        .btn-secondary:hover {
-            background-color: #5a6268;
-        }
-        
-        .results {
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            overflow: hidden;
-        }
-        
-        .results-header {
-            padding: 15px 20px;
-            background-color: #f8f9fa;
-            border-bottom: 1px solid #dee2e6;
-            font-size: 14px;
-            color: #666;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .sort-container {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .sort-container label {
-            font-weight: 500;
-            color: #495057;
-        }
-        
-        .sort-select {
-            padding: 6px 12px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 14px;
-            background: white;
-            cursor: pointer;
-        }
-        
-        .sort-select:focus {
-            outline: none;
-            border-color: #4A90E2;
-        }
-        
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        
-        th {
-            background-color: #f8f9fa;
-            padding: 12px;
-            text-align: left;
-            font-weight: 600;
-            color: #495057;
-            border-bottom: 2px solid #dee2e6;
-            font-size: 14px;
-        }
-        
-        td {
-            padding: 12px;
-            border-bottom: 1px solid #dee2e6;
-            font-size: 14px;
-        }
-        
-        tbody tr:hover {
-            background-color: #f8f9fa;
-        }
-        
-        .text-center {
-            text-align: center;
-        }
-        
-        .pagination {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 5px;
-            padding: 20px;
-        }
-        
-        .page-btn {
-            padding: 6px 12px;
-            border: 1px solid #ddd;
-            background: white;
-            color: #333;
-            text-decoration: none;
-            border-radius: 4px;
-            font-size: 14px;
-            transition: all 0.3s;
-            cursor: pointer;
-        }
-        
-        .page-btn:hover {
-            background-color: #f8f9fa;
-            border-color: #4A90E2;
-        }
-        
-        .page-btn.active {
-            background-color: #4A90E2;
-            color: white;
-            border-color: #4A90E2;
-        }
-        
-        .page-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-        
-        .loading {
-            text-align: center;
-            padding: 40px;
-            font-size: 18px;
-            color: #666;
-        }
-        
-        .stats {
-            background: #e3f2fd;
-            padding: 15px 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            font-size: 14px;
-        }
-        
-        .stat-item {
-            color: #1976d2;
-        }
-        
-        .stat-item strong {
-            color: #0d47a1;
-        }
-        
-        .filter-input {
-            cursor: pointer !important;
-            background-color: white !important;
-            color: #333;
-        }
-        
-        .filter-input:hover {
-            background-color: #f8f9fa !important;
-        }
-        
-        .filter-input:focus {
-            outline: none;
-            border-color: #4A90E2;
-            background-color: #f8f9fa !important;
-        }
-        
-        /* ---------- modal 기본 레이아웃 ---------- */
-        .modal-overlay {
-            position: fixed;
-            inset: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 1000;
-            backdrop-filter: blur(2px);
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.3s ease, visibility 0.3s ease;
-        }
-        
-        .modal-overlay.show {
-            opacity: 1;
-            visibility: visible;
-        }
-        
-        .modal-container {
-            width: 600px;
-            max-height: 80vh;
-            background: #fff;
-            border-radius: 12px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            transform: scale(0.9);
-            transition: transform 0.3s ease;
-        }
-        
-        .modal-overlay.show .modal-container {
-            transform: scale(1);
-        }        
-        
-        /* 헤더 · 닫기버튼 등 디테일 */
-        .modal-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 20px 24px;
-            border-bottom: 1px solid #f0f0f0;
-            background-color: #fafafa;
-            border-radius: 12px 12px 0 0;
-        }
-        
-        .modal-header h3 {
-            font-size: 18px;
-            font-weight: 600;
-            color: #2c3e50;
-            margin: 0;
-        }        
-        
-        .modal-close {
-            background: none;
-            border: none;
-            font-size: 28px;
-            cursor: pointer;
-            line-height: 1;
-            color: #666;
-            transition: color 0.2s;
-            padding: 0;
-            width: 32px;
-            height: 32px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-        }
-        
-        .modal-close:hover {
-            background-color: #f0f0f0;
-            color: #333;
-        }
-        
-        .modal-body {
-            padding: 0;
-            overflow-y: auto;
-            flex: 1;
-        }
-        
-        /* 검색바 스타일 */
-        .modal-search-bar {
-            padding: 16px 24px;
-            background-color: #f8f9fa;
-            border-bottom: 1px solid #e9ecef;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-        
-        .modal-search-bar label {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 14px;
-            color: #495057;
-            cursor: pointer;
-            font-weight: 500;
-        }
-        
-        .modal-search-bar input[type="checkbox"] {
-            width: 18px;
-            height: 18px;
-            cursor: pointer;
-        }
-        
-        .modal-btn-confirm {
-            margin-left: auto;
-            padding: 8px 20px;
-            background-color: #4A90E2;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            font-size: 14px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        
-        .modal-btn-confirm:hover {
-            background-color: #357ABD;
-        }
-        
-        /* 컨텐츠 영역 */
-        .modal-content {
-            padding: 20px 24px;
-        }
-        
-        /* 대륙별 제목 */
-        .modal-subtitle {
-            font-size: 15px;
-            font-weight: 600;
-            color: #495057;
-            margin-bottom: 12px;
-            padding: 8px 0;
-            border-bottom: 2px solid #e9ecef;
-        }
-        
-        .modal-subtitle:not(:first-child) {
-            margin-top: 24px;
-        }
-        
-        
-        /* 체크박스 그리드(2열‧3열) */
-        .modal-checkbox-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 0;
-        }
-        .country-modal-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 0;
-            margin-bottom: 20px;
-        }
-        
-        .modal-checkbox-item {
-            padding: 12px 16px;
-            border-bottom: 1px solid #f0f0f0;
-            border-right: 1px solid #f0f0f0;
-            transition: background-color 0.2s;
-        }
-        
-        .modal-checkbox-item:hover {
-            background-color: #f8f9fa;
-        }
-        
-        /* 마지막 행의 border-bottom 제거 */
-        .modal-checkbox-grid .modal-checkbox-item:nth-last-child(-n+2) {
-            border-bottom: none;
-        }
-        
-        .country-modal-grid .modal-checkbox-item:nth-last-child(-n+3) {
-            border-bottom: none;
-        }
-        
-        /* 우측 border 제거 */
-        .modal-checkbox-grid .modal-checkbox-item:nth-child(2n) {
-            border-right: none;
-        }
-        
-        .country-modal-grid .modal-checkbox-item:nth-child(3n) {
-            border-right: none;
-        }
-        
-        .modal-checkbox-item label {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            cursor: pointer;
-            font-size: 14px;
-            color: #495057;
-            margin: 0;
-        }
-        
-        .modal-checkbox-item input[type="checkbox"] {
-            width: 16px;
-            height: 16px;
-            cursor: pointer;
-            flex-shrink: 0;
-        }
-        
-        /* 체크박스 스타일 개선 */
-        input[type="checkbox"] {
-            accent-color: #4A90E2;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f5f5f5; color: #333; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        h1 { margin-bottom: 30px; color: #2c3e50; }
+        .search-form { background: white; border: 1px solid #ddd; border-radius: 8px; padding: 25px; margin-bottom: 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-bottom: 20px; }
+        .form-group { display: flex; align-items: center; }
+        .form-group label { width: 100px; font-weight: 500; color: #555; }
+        .form-group input, .form-group select { flex: 1; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; }
+        .form-group input:focus, .form-group select:focus { outline: none; border-color: #4A90E2; }
+        .year-group { display: flex; align-items: center; gap: 10px; }
+        .year-group select { flex: 1; }
+        .more-options-toggle { text-align: center; margin: 20px 0; }
+        .more-options-btn { background: none; border: none; color: #4A90E2; cursor: pointer; font-size: 14px; padding: 5px 15px; display: inline-flex; align-items: center; gap: 5px; }
+        .more-options-btn:hover { text-decoration: underline; }
+        .arrow { font-size: 12px; transition: transform 0.3s; }
+        .arrow.up { transform: rotate(180deg); }
+        .more-options { display: none; border-top: 1px solid #e0e0e0; padding-top: 20px; margin-top: 20px; }
+        .more-options.show { display: block; }
+        .index-buttons { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; }
+        .index-btn { padding: 5px 10px; border: 1px solid #ddd; background: white; cursor: pointer; font-size: 14px; border-radius: 3px; transition: all 0.3s; }
+        .index-btn:hover { background-color: #f0f0f0; border-color: #4A90E2; }
+        .index-btn.active { background-color: #4A90E2; color: white; border-color: #4A90E2; }
+        .button-group { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+        .btn { padding: 10px 24px; border: none; border-radius: 4px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.3s; }
+        .btn-primary { background-color: #4A90E2; color: white; }
+        .btn-primary:hover { background-color: #357ABD; }
+        .btn-secondary { background-color: #6c757d; color: white; }
+        .btn-secondary:hover { background-color: #5a6268; }
+        .results { background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); overflow: hidden; }
+        .results-header { padding: 15px 20px; background-color: #f8f9fa; border-bottom: 1px solid #dee2e6; font-size: 14px; color: #666; display: flex; justify-content: space-between; align-items: center; }
+        .sort-container { display: flex; align-items: center; gap: 10px; }
+        .sort-container label { font-weight: 500; color: #495057; }
+        .sort-select { padding: 6px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; background: white; cursor: pointer; }
+        .sort-select:focus { outline: none; border-color: #4A90E2; }
+        table { width: 100%; border-collapse: collapse; }
+        th { background-color: #f8f9fa; padding: 12px; text-align: left; font-weight: 600; color: #495057; border-bottom: 2px solid #dee2e6; font-size: 14px; }
+        td { padding: 12px; border-bottom: 1px solid #dee2e6; font-size: 14px; }
+        tbody tr:hover { background-color: #f8f9fa; }
+        .text-center { text-align: center; }
+        .pagination { display: flex; justify-content: center; align-items: center; gap: 5px; padding: 20px; }
+        .page-btn { padding: 6px 12px; border: 1px solid #ddd; background: white; color: #333; text-decoration: none; border-radius: 4px; font-size: 14px; transition: all 0.3s; cursor: pointer; }
+        .page-btn:hover { background-color: #f8f9fa; border-color: #4A90E2; }
+        .page-btn.active { background-color: #4A90E2; color: white; border-color: #4A90E2; }
+        .page-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .loading { text-align: center; padding: 40px; font-size: 18px; color: #666; }
+        .stats { background: #e3f2fd; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; font-size: 14px; }
+        .stat-item { color: #1976d2; }
+        .stat-item strong { color: #0d47a1; }
+        .filter-input { cursor: pointer !important; background-color: white !important; color: #333; }
+        .filter-input:hover { background-color: #f8f9fa !important; }
+        .filter-input:focus { outline: none; border-color: #4A90E2; background-color: #f8f9fa !important; }
+        .modal-overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0, 0, 0, 0.5); z-index: 1000; backdrop-filter: blur(2px); opacity: 0; visibility: hidden; transition: opacity 0.3s ease, visibility 0.3s ease; }
+        .modal-overlay.show { opacity: 1; visibility: visible; }
+        .modal-container { width: 600px; max-height: 80vh; background: #fff; border-radius: 12px; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15); position: relative; display: flex; flex-direction: column; transform: scale(0.9); transition: transform 0.3s ease; }
+        .modal-overlay.show .modal-container { transform: scale(1); }
+        .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; border-bottom: 1px solid #f0f0f0; background-color: #fafafa; border-radius: 12px 12px 0 0; }
+        .modal-header h3 { font-size: 18px; font-weight: 600; color: #2c3e50; margin: 0; }
+        .modal-close { background: none; border: none; font-size: 28px; cursor: pointer; line-height: 1; color: #666; transition: color 0.2s; padding: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
+        .modal-close:hover { background-color: #f0f0f0; color: #333; }
+        .modal-body { padding: 0; overflow-y: auto; flex: 1; }
+        .modal-search-bar { padding: 16px 24px; background-color: #f8f9fa; border-bottom: 1px solid #e9ecef; display: flex; align-items: center; gap: 15px; }
+        .modal-search-bar label { display: flex; align-items: center; gap: 8px; font-size: 14px; color: #495057; cursor: pointer; font-weight: 500; }
+        .modal-search-bar input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
+        .modal-btn-confirm { margin-left: auto; padding: 8px 20px; background-color: #4A90E2; color: white; border: none; border-radius: 6px; font-size: 14px; font-weight: 500; cursor: pointer; transition: background-color 0.3s; }
+        .modal-btn-confirm:hover { background-color: #357ABD; }
+        .modal-content { padding: 20px 24px; }
+        .modal-subtitle { font-size: 15px; font-weight: 600; color: #495057; margin-bottom: 12px; padding: 8px 0; border-bottom: 2px solid #e9ecef; }
+        .modal-subtitle:not(:first-child) { margin-top: 24px; }
+        .modal-checkbox-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0; }
+        .country-modal-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; margin-bottom: 20px; }
+        .modal-checkbox-item { padding: 12px 16px; border-bottom: 1px solid #f0f0f0; border-right: 1px solid #f0f0f0; transition: background-color 0.2s; }
+        .modal-checkbox-item:hover { background-color: #f8f9fa; }
+        .modal-checkbox-grid .modal-checkbox-item:nth-last-child(-n+2) { border-bottom: none; }
+        .country-modal-grid .modal-checkbox-item:nth-last-child(-n+3) { border-bottom: none; }
+        .modal-checkbox-grid .modal-checkbox-item:nth-child(2n) { border-right: none; }
+        .country-modal-grid .modal-checkbox-item:nth-child(3n) { border-right: none; }
+        .modal-checkbox-item label { display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 14px; color: #495057; margin: 0; }
+        .modal-checkbox-item input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; flex-shrink: 0; }
+        input[type="checkbox"] { accent-color: #4A90E2; }
         @media (max-width: 768px) {
-            .modal-container {
-                width: 95%;
-                max-height: 95vh;
-            }
-            
-            .country-modal-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-            
-        
+            .modal-container { width: 95%; max-height: 95vh; }
+            .country-modal-grid { grid-template-columns: repeat(2, 1fr); }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>🎬 영화 검색 시스템</h1>
-        
         <div class="stats" id="stats">
             <div class="stat-item">총 영화 수: <strong id="totalMovies">-</strong>개</div>
         </div>
-        
         <div class="search-form">
             <div class="form-grid">
                 <div class="form-group">
                     <label>• 영화명</label>
                     <input type="text" id="movieTitle" placeholder="영화명을 입력하세요">
                 </div>
-                
                 <div class="form-group">
                     <label>• 감독명</label>
                     <input type="text" id="directorName" placeholder="감독명을 입력하세요">
                 </div>
-                
                 <div class="form-group">
                     <label>• 제작연도</label>
                     <div class="year-group">
-                        <select id="yearFrom">
-                            <option value="--전체--">--전체--</option>
-                        </select>
+                        <select id="yearFrom"><option value="--전체--">--전체--</option></select>
                         <span>~</span>
-                        <select id="yearTo">
-                            <option value="--전체--">--전체--</option>
-                        </select>
+                        <select id="yearTo"><option value="--전체--">--전체--</option></select>
                     </div>
                 </div>
             </div>
-            
             <div class="more-options-toggle">
-                <button class="more-options-btn" onclick="toggleMoreOptions()">
-                    더보기 <span class="arrow" id="arrow">▼</span>
-                </button>
+                <button class="more-options-btn" onclick="toggleMoreOptions()">더보기 <span class="arrow" id="arrow">▼</span></button>
             </div>
-            
             <div class="more-options" id="moreOptions">
                 <div class="form-grid">
-                    <div class="form-group">
-                        <label>• 제작상태</label>
-                        <input type="text" id="productionStatus" readonly 
-                               placeholder="전체" 
-                               onclick="openModal('productionStatus')"
-                               class="filter-input">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label>• 유형</label>
-                        <input type="text" id="movieType" readonly 
-                               placeholder="전체" 
-                               onclick="openModal('movieType')"
-                               class="filter-input">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label>• 장르별</label>
-                        <input type="text" id="genre" readonly 
-                               placeholder="전체" 
-                               onclick="openModal('genre')"
-                               class="filter-input">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label>• 국적별</label>
-                        <input type="text" id="country" readonly 
-                               placeholder="전체" 
-                               onclick="openModal('country')"
-                               class="filter-input">
-                    </div>
+                    <div class="form-group"><label>• 제작상태</label><input type="text" id="productionStatus" readonly placeholder="전체" onclick="openModal('productionStatus')" class="filter-input"></div>
+                    <div class="form-group"><label>• 유형</label><input type="text" id="movieType" readonly placeholder="전체" onclick="openModal('movieType')" class="filter-input"></div>
+                    <div class="form-group"><label>• 장르별</label><input type="text" id="genre" readonly placeholder="전체" onclick="openModal('genre')" class="filter-input"></div>
+                    <div class="form-group"><label>• 국적별</label><input type="text" id="country" readonly placeholder="전체" onclick="openModal('country')" class="filter-input"></div>
                 </div>
-                
                 <div style="margin-top: 20px;">
                     <label style="font-weight: 500; color: #555;">• 영화명 인덱싱</label>
                     <div class="index-buttons">
-                        <button class="index-btn" onclick="setTitleIndex('ㄱ')">ㄱ</button>
-                        <button class="index-btn" onclick="setTitleIndex('ㄴ')">ㄴ</button>
-                        <button class="index-btn" onclick="setTitleIndex('ㄷ')">ㄷ</button>
-                        <button class="index-btn" onclick="setTitleIndex('ㄹ')">ㄹ</button>
-                        <button class="index-btn" onclick="setTitleIndex('ㅁ')">ㅁ</button>
-                        <button class="index-btn" onclick="setTitleIndex('ㅂ')">ㅂ</button>
-                        <button class="index-btn" onclick="setTitleIndex('ㅅ')">ㅅ</button>
-                        <button class="index-btn" onclick="setTitleIndex('ㅇ')">ㅇ</button>
-                        <button class="index-btn" onclick="setTitleIndex('ㅈ')">ㅈ</button>
-                        <button class="index-btn" onclick="setTitleIndex('ㅊ')">ㅊ</button>
-                        <button class="index-btn" onclick="setTitleIndex('ㅋ')">ㅋ</button>
-                        <button class="index-btn" onclick="setTitleIndex('ㅌ')">ㅌ</button>
-                        <button class="index-btn" onclick="setTitleIndex('ㅍ')">ㅍ</button>
-                        <button class="index-btn" onclick="setTitleIndex('ㅎ')">ㅎ</button>
-                        <button class="index-btn" onclick="setTitleIndex('A')">A</button>
-                        <button class="index-btn" onclick="setTitleIndex('B')">B</button>
-                        <button class="index-btn" onclick="setTitleIndex('C')">C</button>
-                        <button class="index-btn" onclick="setTitleIndex('D')">D</button>
-                        <button class="index-btn" onclick="setTitleIndex('E')">E</button>
-                        <button class="index-btn" onclick="setTitleIndex('F')">F</button>
-                        <button class="index-btn" onclick="setTitleIndex('G')">G</button>
-                        <button class="index-btn" onclick="setTitleIndex('H')">H</button>
-                        <button class="index-btn" onclick="setTitleIndex('I')">I</button>
-                        <button class="index-btn" onclick="setTitleIndex('J')">J</button>
-                        <button class="index-btn" onclick="setTitleIndex('K')">K</button>
-                        <button class="index-btn" onclick="setTitleIndex('L')">L</button>
-                        <button class="index-btn" onclick="setTitleIndex('M')">M</button>
-                        <button class="index-btn" onclick="setTitleIndex('N')">N</button>
-                        <button class="index-btn" onclick="setTitleIndex('O')">O</button>
-                        <button class="index-btn" onclick="setTitleIndex('P')">P</button>
-                        <button class="index-btn" onclick="setTitleIndex('Q')">Q</button>
-                        <button class="index-btn" onclick="setTitleIndex('R')">R</button>
-                        <button class="index-btn" onclick="setTitleIndex('S')">S</button>
-                        <button class="index-btn" onclick="setTitleIndex('T')">T</button>
-                        <button class="index-btn" onclick="setTitleIndex('U')">U</button>
-                        <button class="index-btn" onclick="setTitleIndex('V')">V</button>
-                        <button class="index-btn" onclick="setTitleIndex('W')">W</button>
-                        <button class="index-btn" onclick="setTitleIndex('X')">X</button>
-                        <button class="index-btn" onclick="setTitleIndex('Y')">Y</button>
-                        <button class="index-btn" onclick="setTitleIndex('Z')">Z</button>
+                        <button class="index-btn" onclick="setTitleIndex('ㄱ')">ㄱ</button><button class="index-btn" onclick="setTitleIndex('ㄴ')">ㄴ</button><button class="index-btn" onclick="setTitleIndex('ㄷ')">ㄷ</button><button class="index-btn" onclick="setTitleIndex('ㄹ')">ㄹ</button><button class="index-btn" onclick="setTitleIndex('ㅁ')">ㅁ</button><button class="index-btn" onclick="setTitleIndex('ㅂ')">ㅂ</button><button class="index-btn" onclick="setTitleIndex('ㅅ')">ㅅ</button><button class="index-btn" onclick="setTitleIndex('ㅇ')">ㅇ</button><button class="index-btn" onclick="setTitleIndex('ㅈ')">ㅈ</button><button class="index-btn" onclick="setTitleIndex('ㅊ')">ㅊ</button><button class="index-btn" onclick="setTitleIndex('ㅋ')">ㅋ</button><button class="index-btn" onclick="setTitleIndex('ㅌ')">ㅌ</button><button class="index-btn" onclick="setTitleIndex('ㅍ')">ㅍ</button><button class="index-btn" onclick="setTitleIndex('ㅎ')">ㅎ</button><button class="index-btn" onclick="setTitleIndex('A')">A</button><button class="index-btn" onclick="setTitleIndex('B')">B</button><button class="index-btn" onclick="setTitleIndex('C')">C</button><button class="index-btn" onclick="setTitleIndex('D')">D</button><button class="index-btn" onclick="setTitleIndex('E')">E</button><button class="index-btn" onclick="setTitleIndex('F')">F</button><button class="index-btn" onclick="setTitleIndex('G')">G</button><button class="index-btn" onclick="setTitleIndex('H')">H</button><button class="index-btn" onclick="setTitleIndex('I')">I</button><button class="index-btn" onclick="setTitleIndex('J')">J</button><button class="index-btn" onclick="setTitleIndex('K')">K</button><button class="index-btn" onclick="setTitleIndex('L')">L</button><button class="index-btn" onclick="setTitleIndex('M')">M</button><button class="index-btn" onclick="setTitleIndex('N')">N</button><button class="index-btn" onclick="setTitleIndex('O')">O</button><button class="index-btn" onclick="setTitleIndex('P')">P</button><button class="index-btn" onclick="setTitleIndex('Q')">Q</button><button class="index-btn" onclick="setTitleIndex('R')">R</button><button class="index-btn" onclick="setTitleIndex('S')">S</button><button class="index-btn" onclick="setTitleIndex('T')">T</button><button class="index-btn" onclick="setTitleIndex('U')">U</button><button class="index-btn" onclick="setTitleIndex('V')">V</button><button class="index-btn" onclick="setTitleIndex('W')">W</button><button class="index-btn" onclick="setTitleIndex('X')">X</button><button class="index-btn" onclick="setTitleIndex('Y')">Y</button><button class="index-btn" onclick="setTitleIndex('Z')">Z</button>
                     </div>
                 </div>
             </div>
-            
             <div class="button-group">
                 <button class="btn btn-primary" onclick="searchMovies()">🔍 조회</button>
                 <button class="btn btn-secondary" onclick="resetForm()">↻ 초기화</button>
             </div>
         </div>
-        
         <div id="resultsContainer"></div>
     </div>
-    
     <div id="modalOverlay" class="modal-overlay" onclick="closeModalOverlay(event)">
         <div class="modal-container">
             <div class="modal-header">
@@ -1067,32 +472,20 @@ HTML_TEMPLATE = '''
             </div>
             <div class="modal-body">
                 <div class="modal-search-bar">
-                    <input type="checkbox" id="modalSelectAll" onchange="toggleAllModalCheckboxes()">
-                    <label for="modalSelectAll">전체 선택</label>
+                    <input type="checkbox" id="modalSelectAll" onchange="toggleAllModalCheckboxes()"><label for="modalSelectAll">전체 선택</label>
                     <button class="modal-btn-confirm" onclick="confirmSelection()">확인</button>
                 </div>
-                <div class="modal-content" id="modalContent">
-                    </div>
+                <div class="modal-content" id="modalContent"></div>
             </div>
         </div>
     </div>
-    
     <script>
         let currentTitleIndex = '';
-        let currentSortOrder = 'year_desc';  // 기본 정렬: 제작년도 내림차순
-        
-        // 페이지 로드 시 초기화
-        window.onload = function() {
-            initYearSelects();
-            loadStats();
-            loadFilterOptions();
-        };
-        
-        // 연도 선택 옵션 초기화
+        let currentSortOrder = 'year_desc';
+        window.onload = function() { initYearSelects(); loadStats(); loadFilterOptions(); };
         function initYearSelects() {
             const yearFrom = document.getElementById('yearFrom');
             const yearTo = document.getElementById('yearTo');
-            
             for (let year = 2025; year >= 1925; year--) {
                 const option1 = new Option(year, year);
                 const option2 = new Option(year, year);
@@ -1100,413 +493,116 @@ HTML_TEMPLATE = '''
                 yearTo.add(option2);
             }
         }
-        
         let currentModalType = '';
-        let selectedValues = {
-            productionStatus: [],
-            movieType: [],
-            genre: [],
-            country: []
-        };
-        
-        // 필터 옵션 로드
+        let selectedValues = { productionStatus: [], movieType: [], genre: [], country: [] };
         function loadFilterOptions() {
-            fetch('/api/filter-options')
-                .then(response => response.json())
-                .then(data => {
-                    window.filterOptions = data;
-                })
-                .catch(error => {
-                    console.error('필터 옵션 로드 실패:', error);
-                });
+            fetch('/api/filter-options').then(response => response.json()).then(data => { window.filterOptions = data; }).catch(error => { console.error('필터 옵션 로드 실패:', error); });
         }
-        
-        // 모달 열기
         function openModal(type) {
             currentModalType = type;
             const modal = document.getElementById('modalOverlay');
             const modalContainer = modal.querySelector('.modal-container');
             const modalTitle = document.getElementById('modalTitle');
             const modalContent = document.getElementById('modalContent');
-            
-            // 제목 설정
             modalTitle.textContent = '코드 검색결과';
-            
-            // 국가 선택일 경우 모달 크기 확대
-            if (type === 'country') {
-                modalContainer.style.maxWidth = '800px';
-            } else {
-                modalContainer.style.maxWidth = '600px';
-            }
-            
-            // 내용 생성
+            if (type === 'country') { modalContainer.style.maxWidth = '800px'; } else { modalContainer.style.maxWidth = '600px'; }
             modalContent.innerHTML = '';
-            
             if (type === 'country') {
-                // 국가는 대륙별로 표시
                 for (const [continent, countries] of Object.entries(window.filterOptions.countries_by_continent || {})) {
                     if (countries.length > 0) {
-                        const gridHtml = countries.map((country, index) => {
-                            const isLastRow = index >= countries.length - (countries.length % 3 || 3);
-                            return `
-                                <div class="modal-checkbox-item" style="${isLastRow ? 'border-bottom: none;' : ''}">
-                                    <label>
-                                        <input type="checkbox" name="${type}" value="${country}" 
-                                            ${selectedValues[type].includes(country) ? 'checked' : ''}>
-                                        ${country}
-                                    </label>
-                                </div>
-                            `;
-                        }).join('');
-                        
-                        modalContent.innerHTML += `
-                            <div class="modal-subtitle">${continent}</div>
-                            <div class="country-modal-grid">
-                                ${gridHtml}
-                            </div>
-                        `;
+                        const gridHtml = countries.map((country, index) => { const isLastRow = index >= countries.length - (countries.length % 3 || 3); return `<div class="modal-checkbox-item" style="${isLastRow ? 'border-bottom: none;' : ''}"><label><input type="checkbox" name="${type}" value="${country}" ${selectedValues[type].includes(country) ? 'checked' : ''}>${country}</label></div>`; }).join('');
+                        modalContent.innerHTML += `<div class="modal-subtitle">${continent}</div><div class="country-modal-grid">${gridHtml}</div>`;
                     }
                 }
             } else {
-                // 나머지는 2열 그리드로 표시
-                const items = window.filterOptions[type === 'productionStatus' ? 'production_status' : 
-                             type === 'movieType' ? 'types' : 
-                             type === 'genre' ? 'genres' : ''] || [];
-                
-                const gridHtml = items.map((item, index) => {
-                    const isLastRow = index >= items.length - (items.length % 2 || 2);
-                    return `
-                        <div class="modal-checkbox-item" style="${isLastRow ? 'border-bottom: none;' : ''}">
-                            <label>
-                                <input type="checkbox" name="${type}" value="${item}" 
-                                    ${selectedValues[type].includes(item) ? 'checked' : ''}>
-                                ${item}
-                            </label>
-                        </div>
-                    `;
-                }).join('');
-                
-                modalContent.innerHTML = `
-                    <div class="modal-checkbox-grid">
-                        ${gridHtml}
-                    </div>
-                `;
+                const items = window.filterOptions[type === 'productionStatus' ? 'production_status' : type === 'movieType' ? 'types' : type === 'genre' ? 'genres' : ''] || [];
+                const gridHtml = items.map((item, index) => { const isLastRow = index >= items.length - (items.length % 2 || 2); return `<div class="modal-checkbox-item" style="${isLastRow ? 'border-bottom: none;' : ''}"><label><input type="checkbox" name="${type}" value="${item}" ${selectedValues[type].includes(item) ? 'checked' : ''}>${item}</label></div>`; }).join('');
+                modalContent.innerHTML = `<div class="modal-checkbox-grid">${gridHtml}</div>`;
             }
-            
-            // 전체 선택 체크박스 상태 업데이트
             updateSelectAllCheckbox();
-            
-            // 모달 표시
             modal.classList.add('show');
         }
-        
-        // 모달 닫기
-        function closeModal() {
-            document.getElementById('modalOverlay').classList.remove('show');
-        }
-        
-        // 모달 오버레이 클릭 시 닫기
-        function closeModalOverlay(event) {
-            if (event.target === event.currentTarget) {
-                closeModal();
-            }
-        }
-        
-        // 전체 선택/해제
+        function closeModal() { document.getElementById('modalOverlay').classList.remove('show'); }
+        function closeModalOverlay(event) { if (event.target === event.currentTarget) { closeModal(); } }
         function toggleAllModalCheckboxes() {
             const selectAll = document.getElementById('modalSelectAll');
             const checkboxes = document.querySelectorAll(`#modalContent input[name="${currentModalType}"]`);
-            
-            checkboxes.forEach(cb => {
-                cb.checked = selectAll.checked;
-            });
+            checkboxes.forEach(cb => { cb.checked = selectAll.checked; });
         }
-        
-        // 전체 선택 체크박스 상태 업데이트
         function updateSelectAllCheckbox() {
             const checkboxes = document.querySelectorAll(`#modalContent input[name="${currentModalType}"]`);
             const selectAll = document.getElementById('modalSelectAll');
             const checkedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
-            
             selectAll.checked = checkedCount === checkboxes.length && checkboxes.length > 0;
             selectAll.indeterminate = checkedCount > 0 && checkedCount < checkboxes.length;
         }
-        
-        // 선택 확인
         function confirmSelection() {
             const checkboxes = document.querySelectorAll(`#modalContent input[name="${currentModalType}"]:checked`);
             selectedValues[currentModalType] = Array.from(checkboxes).map(cb => cb.value);
-            
-            // 입력 필드 업데이트
             const input = document.getElementById(currentModalType);
-            if (selectedValues[currentModalType].length === 0) {
-                input.value = '';
-                input.placeholder = '전체';
-            } else {
-                input.value = selectedValues[currentModalType].join(', ');
-            }
-            
+            if (selectedValues[currentModalType].length === 0) { input.value = ''; input.placeholder = '전체'; } else { input.value = selectedValues[currentModalType].join(', '); }
             closeModal();
         }
-        
-        // 개별 체크박스 변경 시
-        document.addEventListener('change', function(e) {
-            if (e.target.type === 'checkbox' && e.target.name && e.target !== document.getElementById('modalSelectAll')) {
-                updateSelectAllCheckbox();
-            }
-        });
-        
-        // 더보기 토글
+        document.addEventListener('change', function(e) { if (e.target.type === 'checkbox' && e.target.name && e.target !== document.getElementById('modalSelectAll')) { updateSelectAllCheckbox(); } });
         function toggleMoreOptions() {
             const moreOptions = document.getElementById('moreOptions');
             const arrow = document.getElementById('arrow');
-            
-            if (moreOptions.classList.contains('show')) {
-                moreOptions.classList.remove('show');
-                arrow.classList.remove('up');
-            } else {
-                moreOptions.classList.add('show');
-                arrow.classList.add('up');
-            }
+            if (moreOptions.classList.contains('show')) { moreOptions.classList.remove('show'); arrow.classList.remove('up'); } else { moreOptions.classList.add('show'); arrow.classList.add('up'); }
         }
-        
-        // 영화명 인덱싱 설정 (토글 기능)
         function setTitleIndex(index) {
-            // 이미 선택된 인덱스를 다시 클릭하면 취소
-            if (currentTitleIndex === index) {
-                currentTitleIndex = '';
-                event.target.classList.remove('active');
-            } else {
-                // 새로운 인덱스 선택
-                currentTitleIndex = index;
-                
-                // 모든 버튼의 active 클래스 제거
-                document.querySelectorAll('.index-btn').forEach(btn => {
-                    btn.classList.remove('active');
-                });
-                
-                // 클릭된 버튼에 active 클래스 추가
-                event.target.classList.add('active');
-            }
+            if (currentTitleIndex === index) { currentTitleIndex = ''; event.target.classList.remove('active'); } else { currentTitleIndex = index; document.querySelectorAll('.index-btn').forEach(btn => { btn.classList.remove('active'); }); event.target.classList.add('active'); }
         }
-        
-        // 통계 로드
         function loadStats() {
-            fetch('/api/stats')
-                .then(response => response.json())
-                .then(data => {
-                    document.getElementById('totalMovies').textContent = data.total_movies ? data.total_movies.toLocaleString() : '0';
-                })
-                .catch(error => {
-                    console.error('통계 로드 실패:', error);
-                });
+            fetch('/api/stats').then(response => response.json()).then(data => { document.getElementById('totalMovies').textContent = data.total_movies ? data.total_movies.toLocaleString() : '0'; }).catch(error => { console.error('통계 로드 실패:', error); });
         }
-        
-        // 정렬 변경
-        function changeSortOrder() {
-            currentSortOrder = document.getElementById('sortOrder').value;
-            searchMovies(1);  // 정렬 변경 시 첫 페이지로
-        }
-        
-        // 영화 검색
+        function changeSortOrder() { currentSortOrder = document.getElementById('sortOrder').value; searchMovies(1); }
         function searchMovies(page = 1) {
-            const params = {
-                movieTitle: document.getElementById('movieTitle').value,
-                directorName: document.getElementById('directorName').value,
-                yearFrom: document.getElementById('yearFrom').value,
-                yearTo: document.getElementById('yearTo').value,
-                productionStatus: selectedValues.productionStatus,
-                movieType: selectedValues.movieType,
-                genre: selectedValues.genre,
-                country: selectedValues.country,
-                titleIndex: currentTitleIndex,
-                sortOrder: currentSortOrder,
-                page: page
-            };
-            
+            const params = { movieTitle: document.getElementById('movieTitle').value, directorName: document.getElementById('directorName').value, yearFrom: document.getElementById('yearFrom').value, yearTo: document.getElementById('yearTo').value, productionStatus: selectedValues.productionStatus, movieType: selectedValues.movieType, genre: selectedValues.genre, country: selectedValues.country, titleIndex: currentTitleIndex, sortOrder: currentSortOrder, page: page };
             const resultsContainer = document.getElementById('resultsContainer');
             resultsContainer.innerHTML = '<div class="loading">검색 중...</div>';
-            
-            fetch('/api/search', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(params)
-            })
-            .then(response => response.json())
-            .then(data => {
-                displayResults(data);
-            })
-            .catch(error => {
-                resultsContainer.innerHTML = '<div class="loading">❌ 오류가 발생했습니다.</div>';
-                console.error('Error:', error);
-            });
+            fetch('/api/search', { method: 'POST', headers: { 'Content-Type': 'application/json', }, body: JSON.stringify(params) }).then(response => response.json()).then(data => { displayResults(data); }).catch(error => { resultsContainer.innerHTML = '<div class="loading">❌ 오류가 발생했습니다.</div>'; console.error('Error:', error); });
         }
-        
-        // 검색 결과 표시
         function displayResults(data) {
             const resultsContainer = document.getElementById('resultsContainer');
-            
-            if (!data.results || data.results.length === 0) {
-                resultsContainer.innerHTML = '<div class="loading">검색 결과가 없습니다.</div>';
-                return;
-            }
-            
-            let html = `
-                <div class="results">
-                    <div class="results-header">
-                        <div>
-                            총 ${data.total.toLocaleString()}개의 영화가 검색되었습니다. 
-                            (${data.page}/${data.total_pages} 페이지)
-                        </div>
-                        <div class="sort-container">
-                            <label>정렬:</label>
-                            <select class="sort-select" id="sortOrder" onchange="changeSortOrder()">
-                                <option value="year_desc" ${currentSortOrder === 'year_desc' ? 'selected' : ''}>제작년도 ↓</option>
-                                <option value="year_asc" ${currentSortOrder === 'year_asc' ? 'selected' : ''}>제작년도 ↑</option>
-                                <option value="title_asc" ${currentSortOrder === 'title_asc' ? 'selected' : ''}>영화명순 (ㄱ-Z)</option>
-                                <option value="title_desc" ${currentSortOrder === 'title_desc' ? 'selected' : ''}>영화명순 (Z-ㄱ)</option>
-                            </select>
-                        </div>
-                    </div>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th class="text-center">번호</th>
-                                <th>영화명</th>
-                                <th>영화명(영문)</th>
-                                <th class="text-center">제작연도</th>
-                                <th>제작국가</th>
-                                <th>유형</th>
-                                <th>장르</th>
-                                <th>감독</th>
-                                <th>제작사</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-            `;
-            
-            data.results.forEach((movie, index) => {
-                const rowNumber = (data.page - 1) * data.per_page + index + 1;
-                html += `
-                    <tr>
-                        <td class="text-center">${rowNumber}</td>
-                        <td>${movie.title_ko || ''}</td>
-                        <td>${movie.title_en || ''}</td>
-                        <td class="text-center">${movie.production_year || ''}</td>
-                        <td>${movie.countries || ''}</td>
-                        <td>${movie.type || ''}</td>
-                        <td>${movie.genres || ''}</td>
-                        <td>${movie.director_name || ''}</td>
-                        <td>${movie.company_name || ''}</td>
-                    </tr>
-                `;
-            });
-            
-            html += `
-                        </tbody>
-                    </table>
-                    ${generatePagination(data)}
-                </div>
-            `;
-            
+            if (!data.results || data.results.length === 0) { resultsContainer.innerHTML = '<div class="loading">검색 결과가 없습니다.</div>'; return; }
+            let html = `<div class="results"><div class="results-header"><div>총 ${data.total.toLocaleString()}개의 영화가 검색되었습니다. (${data.page}/${data.total_pages} 페이지)</div><div class="sort-container"><label>정렬:</label><select class="sort-select" id="sortOrder" onchange="changeSortOrder()"><option value="year_desc" ${currentSortOrder === 'year_desc' ? 'selected' : ''}>제작년도 ↓</option><option value="year_asc" ${currentSortOrder === 'year_asc' ? 'selected' : ''}>제작년도 ↑</option><option value="title_asc" ${currentSortOrder === 'title_asc' ? 'selected' : ''}>영화명순 (ㄱ-Z)</option><option value="title_desc" ${currentSortOrder === 'title_desc' ? 'selected' : ''}>영화명순 (Z-ㄱ)</option></select></div></div><table><thead><tr><th class="text-center">번호</th><th>영화명</th><th>영화명(영문)</th><th class="text-center">제작연도</th><th>제작국가</th><th>유형</th><th>장르</th><th>감독</th><th>제작사</th></tr></thead><tbody>`;
+            data.results.forEach((movie, index) => { const rowNumber = (data.page - 1) * data.per_page + index + 1; html += `<tr><td class="text-center">${rowNumber}</td><td>${movie.title_ko || ''}</td><td>${movie.title_en || ''}</td><td class="text-center">${movie.production_year || ''}</td><td>${movie.countries || ''}</td><td>${movie.type || ''}</td><td>${movie.genres || ''}</td><td>${movie.director_name || ''}</td><td>${movie.company_name || ''}</td></tr>`; });
+            html += `</tbody></table>${generatePagination(data)}</div>`;
             resultsContainer.innerHTML = html;
         }
-        
-        // 페이지네이션 생성
         function generatePagination(data) {
             if (data.total_pages <= 1) return '';
-            
             let html = '<div class="pagination">';
-            
-            // 이전 버튼
-            if (data.page > 1) {
-                html += `<button class="page-btn" onclick="searchMovies(${data.page - 1})">이전</button>`;
-            } else {
-                html += `<button class="page-btn" disabled>이전</button>`;
-            }
-            
-            // 페이지 번호
+            if (data.page > 1) { html += `<button class="page-btn" onclick="searchMovies(${data.page - 1})">이전</button>`; } else { html += `<button class="page-btn" disabled>이전</button>`; }
             let startPage = Math.max(1, data.page - 5);
             let endPage = Math.min(data.total_pages, startPage + 9);
-            
-            if (startPage > 1) {
-                html += `<button class="page-btn" onclick="searchMovies(1)">1</button>`;
-                if (startPage > 2) html += `<span>...</span>`;
-            }
-            
-            for (let i = startPage; i <= endPage; i++) {
-                if (i === data.page) {
-                    html += `<button class="page-btn active">${i}</button>`;
-                } else {
-                    html += `<button class="page-btn" onclick="searchMovies(${i})">${i}</button>`;
-                }
-            }
-            
-            if (endPage < data.total_pages) {
-                if (endPage < data.total_pages - 1) html += `<span>...</span>`;
-                html += `<button class="page-btn" onclick="searchMovies(${data.total_pages})">${data.total_pages}</button>`;
-            }
-            
-            // 다음 버튼
-            if (data.page < data.total_pages) {
-                html += `<button class="page-btn" onclick="searchMovies(${data.page + 1})">다음</button>`;
-            } else {
-                html += `<button class="page-btn" disabled>다음</button>`;
-            }
-            
+            if (startPage > 1) { html += `<button class="page-btn" onclick="searchMovies(1)">1</button>`; if (startPage > 2) html += `<span>...</span>`; }
+            for (let i = startPage; i <= endPage; i++) { if (i === data.page) { html += `<button class="page-btn active">${i}</button>`; } else { html += `<button class="page-btn" onclick="searchMovies(${i})">${i}</button>`; } }
+            if (endPage < data.total_pages) { if (endPage < data.total_pages - 1) html += `<span>...</span>`; html += `<button class="page-btn" onclick="searchMovies(${data.total_pages})">${data.total_pages}</button>`; }
+            if (data.page < data.total_pages) { html += `<button class="page-btn" onclick="searchMovies(${data.page + 1})">다음</button>`; } else { html += `<button class="page-btn" disabled>다음</button>`; }
             html += '</div>';
             return html;
         }
-        
-        // 폼 초기화
         function resetForm() {
             document.getElementById('movieTitle').value = '';
             document.getElementById('directorName').value = '';
             document.getElementById('yearFrom').value = '--전체--';
             document.getElementById('yearTo').value = '--전체--';
-            
-            // 선택값 초기화
-            selectedValues = {
-                productionStatus: [],
-                movieType: [],
-                genre: [],
-                country: []
-            };
-            
-            // 입력 필드 초기화
-            document.getElementById('productionStatus').value = '';
-            document.getElementById('productionStatus').placeholder = '전체';
-            document.getElementById('movieType').value = '';
-            document.getElementById('movieType').placeholder = '전체';
-            document.getElementById('genre').value = '';
-            document.getElementById('genre').placeholder = '전체';
-            document.getElementById('country').value = '';
-            document.getElementById('country').placeholder = '전체';
-            
+            selectedValues = { productionStatus: [], movieType: [], genre: [], country: [] };
+            document.getElementById('productionStatus').value = ''; document.getElementById('productionStatus').placeholder = '전체';
+            document.getElementById('movieType').value = ''; document.getElementById('movieType').placeholder = '전체';
+            document.getElementById('genre').value = ''; document.getElementById('genre').placeholder = '전체';
+            document.getElementById('country').value = ''; document.getElementById('country').placeholder = '전체';
             currentTitleIndex = '';
-            currentSortOrder = 'year_desc';  // 정렬 초기화
-            document.querySelectorAll('.index-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
+            currentSortOrder = 'year_desc';
+            document.querySelectorAll('.index-btn').forEach(btn => { btn.classList.remove('active'); });
             document.getElementById('resultsContainer').innerHTML = '';
-            
-            // 더보기 섹션 닫기
             const moreOptions = document.getElementById('moreOptions');
             const arrow = document.getElementById('arrow');
             moreOptions.classList.remove('show');
             arrow.classList.remove('up');
         }
-        
-        // Enter 키로 검색, ESC 키로 모달 닫기
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' && !document.getElementById('modalOverlay').classList.contains('show')) {
-                searchMovies();
-            } else if (e.key === 'Escape' && document.getElementById('modalOverlay').classList.contains('show')) {
-                closeModal();
-            }
-        });
+        document.addEventListener('keydown', function(e) { if (e.key === 'Enter' && !document.getElementById('modalOverlay').classList.contains('show')) { searchMovies(); } else if (e.key === 'Escape' && document.getElementById('modalOverlay').classList.contains('show')) { closeModal(); } });
     </script>
 </body>
 </html>
@@ -1538,18 +634,8 @@ def stats():
         cursor.execute("SELECT COUNT(*) as count FROM movies")
         total_movies = cursor.fetchone()['count']
 
-        # 전체 감독 수
-        cursor.execute("SELECT COUNT(*) as count FROM directors")
-        total_directors = cursor.fetchone()['count']
-
-        # 전체 장르 수
-        cursor.execute("SELECT COUNT(*) as count FROM genres")
-        total_genres = cursor.fetchone()['count']
-
         return jsonify({
-            'total_movies': total_movies,
-            'total_directors': total_directors,
-            'total_genres': total_genres
+            'total_movies': total_movies
         })
     except Error as e:
         return jsonify({'error': str(e)})
@@ -1570,6 +656,4 @@ if __name__ == '__main__':
     print("웹 브라우저에서 http://localhost:5000 으로 접속하세요.")
     print("종료하려면 Ctrl+C를 누르세요.")
     print("=" * 50)
-
-    # Flask 앱 실행
     app.run(debug=True, host='0.0.0.0', port=5000)

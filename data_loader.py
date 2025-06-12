@@ -229,14 +229,11 @@ def main():
         input("\nEnter를 누르면 종료합니다...")
         return
     try:
-<<<<<<< HEAD
         # 로더 초기화
         loader = KobisDBLoader(password='tpgus1260!')  # MySQL 비밀번호 수정
 
         # 엑셀 데이터 로드
-=======
         loader = KobisDBLoader(password='!@jinsw1006!@')
->>>>>>> master
         df = loader.load_excel_data(excel_file)
         loader.step1_load_raw_data(df)
         loader.step2_normalize_data()

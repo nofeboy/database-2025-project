@@ -41,14 +41,11 @@ CREATE TABLE movies (
                         production_status VARCHAR(50),
                         director_id INT,
                         company_id INT,
-                        release_date DATE,
                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
                         INDEX idx_title_ko (title_ko),
                         INDEX idx_title_en (title_en),
                         INDEX idx_production_year (production_year),
-                        INDEX idx_release_date (release_date),
-                        FULLTEXT idx_title_search (title_ko, title_en),
 
                         FOREIGN KEY (director_id) REFERENCES directors(director_id) ON DELETE SET NULL,
                         FOREIGN KEY (company_id) REFERENCES production_companies(company_id) ON DELETE SET NULL
@@ -93,26 +90,3 @@ CREATE TABLE movie_info (
                             INDEX idx_raw_director (director),
                             INDEX idx_raw_year (production_year)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- 검색용 뷰 생성
-CREATE VIEW movie_search_view AS
-SELECT
-    m.movie_id,
-    m.title_ko,
-    m.title_en,
-    m.production_year,
-    m.type,
-    m.production_status,
-    m.release_date,
-    d.name AS director_name,
-    pc.name AS company_name,
-    GROUP_CONCAT(DISTINCT g.name ORDER BY g.name SEPARATOR ', ') AS genres,
-    GROUP_CONCAT(DISTINCT c.name ORDER BY c.name SEPARATOR ', ') AS countries
-FROM movies m
-         LEFT JOIN directors d ON m.director_id = d.director_id
-         LEFT JOIN production_companies pc ON m.company_id = pc.company_id
-         LEFT JOIN movie_genres mg ON m.movie_id = mg.movie_id
-         LEFT JOIN genres g ON mg.genre_id = g.genre_id
-         LEFT JOIN movie_countries mc ON m.movie_id = mc.movie_id
-         LEFT JOIN countries c ON mc.country_id = c.country_id
-GROUP BY m.movie_id;
